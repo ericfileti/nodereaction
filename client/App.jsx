@@ -7,13 +7,28 @@ import Paper from "material-ui/Paper";
 import { white } from "material-ui/styles/colors";
 import RouteContainer from "./containers/RouteContainer.jsx";
 
+
 class App extends Component {
+<<<<<<< HEAD
   constructor(props) {
     super(props);
     this.state = {
       routes: [],
       currentRoute: {}
     };
+=======
+    constructor(props) {
+        super(props);
+        this.state = {
+            routes: [],
+            currentRoute: {},
+        }
+        this.routeItemClicked = this.routeItemClicked.bind(this);
+    }
+    componentDidMount() {
+        this.loadRoutes();
+    }
+>>>>>>> ad1d82c82e81efe6575d17436ad345ebd3d85ad1
 
     this.routeItemClicked = this.routeItemClicked.bind(this);
   }
@@ -35,6 +50,7 @@ class App extends Component {
       .catch(error => console.error("Error:", error));
   }
 
+<<<<<<< HEAD
   // loadRoute(routeName) {
   //     fetch('/currentRoute', {
   //         method: 'POST'
@@ -70,6 +86,28 @@ class App extends Component {
       </div>
     );
   }
+=======
+
+
+    routeItemClicked(id) {
+        console.log(this.state.currentRoute)
+        let newState = this.state;
+        newState.currentRoute = this.state.routes[id]
+        this.setState({ newState })
+        console.log('route id: ' + id);
+    }
+    render() {
+        return (
+            <div>
+                <MuiThemeProvider>
+                    <HeaderContainer />
+                    <RouteListContainer routes={this.state.routes} routeItemClicked={this.routeItemClicked} />
+                    <RouteContainer currentRoute={this.state.currentRoute} />
+                </MuiThemeProvider>
+            </div>
+        )
+    }
+>>>>>>> ad1d82c82e81efe6575d17436ad345ebd3d85ad1
 }
 const graphStyle = {
   height: 100,
