@@ -26,5 +26,5 @@ app.post("/serverdata", (req, res) => {
 
 const PORT = 3001;
 app.listen(PORT, () => {
-  console.log(`***DOGGIE*** PORT ${PORT} is listening`);
+  console.log(`===========DOGGIE=========== \n\nListening on port: ${PORT}`);
 });

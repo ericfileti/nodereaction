@@ -1,4 +1,3 @@
-const NRA = require('../agent/NodeReaction');
 
 const express = require("express");
 const app = express();
@@ -14,100 +13,64 @@ app.use(express.static(__dirname + "./../"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-app.get('/routeList', (req, res, next) => {
-    res.json([{
-        "_id": "5aa094dccc8a70850fb4b19A",
-        "requestUrl": "/country/ca",
-        "requestMethod": "GET",
-        "transactionId": "ddc8bfd0-2271-11e8-80ae-d7802bd01bcd",
-        "rawHeaders": "Host,localhost:3000,User-Agent,insomnia/5.14.7,Cookie,ssid=13,Content-Type,application/x-www-form-urlencoded,Accept,*/*,Content-Length,0",
-        "cookies": "ssid=13",
-        "startTime": "906720370",
-        "startTimestamp": "2018 - 03 - 08T01: 41: 48.237Z",
-        "endTime": "909746223",
-        "endTimestamp": "2018 - 03 - 08T01: 41: 48.240Z",
-        "duration": "3.025853",
-        "__v": "0"
-    },
-    {
-        "_id": "5aa094dccc8a70850fb4b19B",
-        "requestUrl": "/country/us",
-        "requestMethod": "POST",
-        "transactionId": "ddc8bfd0-2271-11e8-80ae-d7802bd01bcd",
-        "rawHeaders": "Host,localhost:3000,User-Agent,insomnia/5.14.7,Cookie,ssid=13,Content-Type,application/x-www-form-urlencoded,Accept,*/*,Content-Length,0",
-        "cookies": "ssid=13",
-        "startTime": "906720370",
-        "startTimestamp": "2018 - 03 - 08T01: 41: 48.237Z",
-        "endTime": "909746223",
-        "endTimestamp": "2018 - 03 - 08T01: 41: 48.240Z",
-        "duration": "3.025853",
-        "__v": "0"
-    },
-    {
-        "_id": "5aa094dccc8a70850fb4b19C",
-        "requestUrl": "/country/NZ",
-        "requestMethod": "GET",
-        "transactionId": "ddc8bfd0-2271-11e8-80ae-d7802bd01bcd",
-        "rawHeaders": "Host,localhost:3000,User-Agent,insomnia/5.14.7,Cookie,ssid=13,Content-Type,application/x-www-form-urlencoded,Accept,*/*,Content-Length,0",
-        "cookies": "ssid=13",
-        "startTime": "906720370",
-        "startTimestamp": "2018-03-08T01:41:48.237Z",
-        "endTime": "909746223",
-        "endTimestamp": "2018-03-08T01:41:48.240Z",
-        "duration": "3.025853",
-        "__v": "0"
-    }
-    ]);
-});
-
-// Mongoose schema
-// Mongo local db
-// Model for each transaction
-
 // Data dump from agent
-app.post("/serverdata", (req, res) => {
-    console.log("PACKET INCOMING");
-    console.log(req.body.packet);
-    const transactions = req.body.packet;
-    transactions.forEach(transaction => {
-        console.log(JSON.stringify(transaction.traces));
+app.post("/api/agent/data/save", (req, res) => {
+  const transactions = req.body.transactions;
+  const d = new Date();
+  console.log(`
+  ===========Server received data from Agent===========
+  time: ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}
+  transactions sent: ${JSON.stringify(transactions.length)}
+  `);
+  
+  transactions.forEach(transaction => {
+    //console.log(JSON.stringify(transaction));
 
-        let trans = new Transaction({
-            requestUrl: transaction.url,
-            requestMethod: transaction.method,
-            routeName: transaction.method + ' - ' + transaction.url,
-            transactionId: transaction.uuid
-        });
-
-        transaction.traces.forEach(traces => {
-            trans.traces.push({
-                type: traces.type,
-                uuid: traces.uuid,
-                duration: traces.duration
-            })
-        })
-
-        trans.save((err, data) => {
-            if (err) return console.log(err);
-            return console.log('Success: ', data);
-        })
+    let trans = new Transaction({
+      route: transaction.route,
+      method: transaction.method,
+      userAgent: transaction.userAgent,
+      rawHeaders: transaction.rawHeaders,
+      cookies: transaction.cookies,
+      remoteAddress: transaction.remoteAddress,
+      startTimestamp: transaction.traceTimer.startTimestamp,
+      endTimestamp: transaction.traceTimer.endTimestamp,
+      duration: transaction.traceTimer.duration
     });
-    res.send("thank ya kindly");
+    transaction.traces.forEach(trace => {
+      trans.traces.push({
+        route: transaction.route,
+        method: transaction.method,
+        library: trace.library,
+        type: trace.type,
+        startTimestamp: trace.traceTimer.startTimestamp,
+        endTimestamp: trace.traceTimer.endTimestamp,
+        duration: trace.traceTimer.duration
+      });
+    });
+    console.log(`Attempting transaction save to database: ${transaction.method} ${transaction.route}`);
+    trans.save((err, data) => {
+      if (err) return console.log(err);
+      return res.end();
+    });
+  });
+  res.send("thank ya kindly");
 });
 
 // Data request from app
-app.get('/getData', (req, res) => {
-    console.log('Request recieved for data');
-    Transaction.find({})
-        .then(data => {
-            console.log('Success');
-            res.json(data);})
-        .catch(err => {
-            console.log('Error: ', err);
-        })
-})
+app.get("/getData", (req, res) => {
+  console.log("Request recieved for data");
+  Transaction.find({})
+    .then(data => {
+      console.log("Success");
+      res.json(data);
+    })
+    .catch(err => {
+      console.log("Error: ", err);
+    });
+});
 
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`***NODE REACTION*** PORT ${PORT} is listening`);
+  console.log(`===========NODE REACTION SERVER===========\n\nListening on port: ${PORT}`);
 });
